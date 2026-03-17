@@ -54,6 +54,13 @@ type Model struct {
 	chatresponse     ChatResponse
 }
 
+type layoutSections struct {
+	header   string
+	status   string
+	composer string
+	footer   string
+}
+
 func newModel(config ChatClientConfig) Model {
 	vp := viewport.New(
 		viewport.WithWidth(80),
@@ -85,16 +92,22 @@ func (m Model) renderMessages() string {
 	log.Println("renderMessages().enter")
 	defer log.Println("renderMessages().exit")
 	var renderedResult []string
+
+	appInnerWidth := m.width - appStyle.GetHorizontalFrameSize()
+	if appInnerWidth < 1 {
+		appInnerWidth = 1
+	}
+
 	for _, msg := range m.messages {
 		var rendered string
 
 		if msg.Role == MessageRoleUser {
 			rendered = userStyle.
-				Width(50).
+				Width(appInnerWidth).
 				Render(msg.Content)
 		} else {
 			rendered = botStyle.
-				Width(m.viewport.Width()).
+				Width(appInnerWidth).
 				Render(msg.Content)
 		}
 
@@ -154,10 +167,49 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 
-		inputHeight := 3
-		m.viewport.SetHeight(msg.Height - inputHeight)
-		m.viewport.SetWidth(msg.Width)
-		m.textinput.SetWidth(msg.Width)
+		m.width = msg.Width
+		m.height = msg.Height
+
+		appInnerWidth := m.width - appStyle.GetHorizontalFrameSize()
+		appInnerHeight := m.height - appStyle.GetVerticalFrameSize()
+
+		if appInnerWidth < 1 {
+			appInnerWidth = 1
+		}
+		if appInnerHeight < 1 {
+			appInnerHeight = 1
+		}
+
+		sectionWidth := appInnerWidth
+
+		sections := m.renderLayoutSections(sectionWidth)
+		headerHeight := lipgloss.Height(sections.header)
+		statusHeight := lipgloss.Height(sections.status)
+		footerHeight := lipgloss.Height(sections.footer)
+		composerHeight := lipgloss.Height(sections.composer)
+
+		paneTotalHeight := appInnerHeight - headerHeight - statusHeight - composerHeight - footerHeight
+		if paneTotalHeight < 1 {
+			paneTotalHeight = 1
+		}
+
+		paneInnerWidth := sectionWidth - paneStyle.GetHorizontalFrameSize()
+		paneInnerHeight := paneTotalHeight - paneStyle.GetVerticalFrameSize()
+		composerInnerWidth := sectionWidth - composerStyle.GetHorizontalFrameSize()
+
+		if paneInnerWidth < 1 {
+			paneInnerWidth = 1
+		}
+		if paneInnerHeight < 1 {
+			paneInnerHeight = 1
+		}
+		if composerInnerWidth < 1 {
+			composerInnerWidth = 1
+		}
+
+		m.viewport.SetWidth(paneInnerWidth)
+		m.viewport.SetHeight(paneInnerHeight)
+		m.textinput.SetWidth(composerInnerWidth)
 
 	case tea.KeyPressMsg:
 
@@ -220,28 +272,76 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() tea.View {
+	appInnerWidth := m.width - appStyle.GetHorizontalFrameSize()
+	if appInnerWidth < 1 {
+		appInnerWidth = 1
+	}
+
+	sections := m.renderLayoutSections(appInnerWidth)
+	pane := m.renderPane(appInnerWidth)
 
 	var c *tea.Cursor
 	if !m.textinput.VirtualCursor() {
 		c = m.textinput.Cursor()
-		c.Y += lipgloss.Height(m.viewport.View() + "\n")
+
+		aboveComposer := lipgloss.Height(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				sections.header,
+				pane,
+				sections.status,
+			),
+		)
+
+		c.Y += 1 + aboveComposer + 1
+		c.X += 4
 	}
 
-	status := ""
-	if m.pending {
-		status = "Thinking " + m.spinner.View()
-	}
-
-	str := lipgloss.JoinVertical(
-		lipgloss.Top,
-		"Header",
-		m.viewport.View(),
-		status,
-		m.textinput.View(),
-		"Footer",
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		sections.header,
+		pane,
+		sections.status,
+		sections.composer,
+		sections.footer,
 	)
 
+	str := appStyle.Render(content)
 	v := tea.NewView(str)
 	v.Cursor = c
 	return v
+}
+
+func (m Model) renderHeader(width int) string {
+	return headerStyle.Render(m.chatClientConfig.Model)
+}
+
+func (m Model) renderStatus(width int) string {
+	statusText := ""
+	if m.pending {
+		statusText = "Thinking " + m.spinner.View()
+	}
+	status := statusStyle.Render(statusText)
+	return status
+}
+
+func (m Model) renderPane(width int) string {
+	return paneStyle.Render(m.viewport.View())
+}
+
+func (m Model) renderComposer(width int) string {
+	return composerStyle.Width(width).Render(m.textinput.View())
+}
+
+func (m Model) renderFooter(width int) string {
+	return footerStyle.Render("Enter send | Ctrl+C exit")
+}
+
+func (m Model) renderLayoutSections(width int) layoutSections {
+	return layoutSections{
+		header:   m.renderHeader(width),
+		status:   m.renderStatus(width),
+		footer:   m.renderFooter(width),
+		composer: m.renderComposer(width),
+	}
 }
