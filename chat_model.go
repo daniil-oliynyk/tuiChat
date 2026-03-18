@@ -66,6 +66,7 @@ func newChatModel(config ChatClientConfig) ChatModel {
 		viewport.WithWidth(80),
 		viewport.WithHeight(20),
 	)
+	vp.MouseWheelEnabled = true
 
 	s := spinner.New()
 	s.Spinner = spinner.Points
@@ -162,6 +163,10 @@ func (m ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
+	case tea.MouseMsg:
+		m.viewport, cmd = m.viewport.Update(msg)
+		return m, cmd
+
 	case tea.WindowSizeMsg:
 
 		m.width = msg.Width
@@ -243,6 +248,14 @@ func (m ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.spinner.Tick,
 				sendMessages(m),
 			)
+
+		case "up":
+			m.viewport.ScrollUp(5)
+			return m, nil
+
+		case "down":
+			m.viewport.ScrollDown(5)
+			return m, nil
 		}
 
 	case chatErrorMsg:
@@ -318,6 +331,7 @@ func (m ChatModel) View() tea.View {
 	str := appStyle.Render(content)
 	v := tea.NewView(str)
 	v.Cursor = c
+	v.MouseMode = tea.MouseModeCellMotion
 	return v
 }
 

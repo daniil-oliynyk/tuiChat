@@ -30,7 +30,6 @@ func main() {
 	log.Println("Config loaded")
 	m := newAppModel(config)
 	p := tea.NewProgram(m)
-
 	_, err = p.Run()
 
 	if err != nil {
