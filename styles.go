@@ -13,7 +13,7 @@ var userStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("230"))
 
 var appStyle = lipgloss.NewStyle().
-	Border(lipgloss.RoundedBorder()).
+	Border(lipgloss.ThickBorder()).
 	BorderForeground(lipgloss.Color("240")).
 	Padding(0, 1)
 
@@ -68,3 +68,20 @@ var statusStyle = lipgloss.NewStyle().
 
 var footerStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("241"))
+
+var labelStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("230"))
+
+var hintStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("244"))
+
+var optStyle = lipgloss.NewStyle().
+	Padding(0, 1)
+
+var errLineStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("203"))
+
+var formStyle = lipgloss.NewStyle().
+	Border(lipgloss.DoubleBorder()).
+	Padding(1, 2)

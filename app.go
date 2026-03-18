@@ -18,7 +18,7 @@ type AppModel struct {
 	width      int
 	height     int
 	setupModel SetupModel
-	chatModel  Model
+	chatModel  ChatModel
 }
 
 func newAppModel(defaultConfig ChatClientConfig) AppModel {
@@ -43,14 +43,14 @@ func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, cmd
 		}
 		model, cmd := a.chatModel.Update(msg)
-		a.chatModel = model.(Model)
+		a.chatModel = model.(ChatModel)
 		return a, cmd
 
 	case navigateToChatMsg:
-		a.chatModel = newModel(msg.config)
+		a.chatModel = newChatModel(msg.config)
 		if a.width > 0 && a.height > 0 {
 			model, _ := a.chatModel.Update(tea.WindowSizeMsg{Width: a.width, Height: a.height})
-			a.chatModel = model.(Model)
+			a.chatModel = model.(ChatModel)
 		}
 		a.screen = screenChat
 		return a, nil
@@ -64,7 +64,7 @@ func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case screenChat:
 		model, cmd := a.chatModel.Update(msg)
-		a.chatModel = model.(Model)
+		a.chatModel = model.(ChatModel)
 		return a, cmd
 	}
 

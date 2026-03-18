@@ -37,7 +37,7 @@ type ChatResponse struct {
 	Response string
 }
 
-type Model struct {
+type ChatModel struct {
 	spinner          spinner.Model
 	viewport         viewport.Model
 	textinput        textinput.Model
@@ -61,7 +61,7 @@ type layoutSections struct {
 	footer   string
 }
 
-func newModel(config ChatClientConfig) Model {
+func newChatModel(config ChatClientConfig) ChatModel {
 	vp := viewport.New(
 		viewport.WithWidth(80),
 		viewport.WithHeight(20),
@@ -77,7 +77,7 @@ func newModel(config ChatClientConfig) Model {
 	ti.CharLimit = 156
 	ti.SetWidth(20)
 
-	return Model{
+	return ChatModel{
 		spinner:          s,
 		viewport:         vp,
 		textinput:        ti,
@@ -88,7 +88,7 @@ func newModel(config ChatClientConfig) Model {
 	}
 }
 
-func (m Model) renderMessages() string {
+func (m ChatModel) renderMessages() string {
 	log.Println("renderMessages().enter")
 	defer log.Println("renderMessages().exit")
 	var renderedResult []string
@@ -124,7 +124,7 @@ func (m Model) renderMessages() string {
 	return content
 }
 
-func sendMessages(m Model) tea.Cmd {
+func sendMessages(m ChatModel) tea.Cmd {
 	log.Println("sendMessages().enter")
 	defer log.Println("sendMessages().exit")
 
@@ -152,11 +152,11 @@ func sendMessages(m Model) tea.Cmd {
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m ChatModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 
@@ -270,7 +270,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) View() tea.View {
+func (m ChatModel) View() tea.View {
 	appInnerWidth := m.width - appStyle.GetHorizontalFrameSize()
 	if appInnerWidth < 1 {
 		appInnerWidth = 1
@@ -321,7 +321,7 @@ func (m Model) View() tea.View {
 	return v
 }
 
-func (m Model) renderHeader(width int) string {
+func (m ChatModel) renderHeader(width int) string {
 	innerWidth := width - headerStyle.GetHorizontalFrameSize()
 	if innerWidth < 1 {
 		innerWidth = 1
@@ -329,7 +329,7 @@ func (m Model) renderHeader(width int) string {
 	return headerStyle.Width(innerWidth).Render("Active Model: " + m.chatClientConfig.Model)
 }
 
-func (m Model) renderStatus(width int) string {
+func (m ChatModel) renderStatus(width int) string {
 	statusText := ""
 	if m.pending {
 		statusText = "Thinking " + m.spinner.View()
@@ -345,7 +345,7 @@ func (m Model) renderStatus(width int) string {
 	return status
 }
 
-func (m Model) renderPane(width int) string {
+func (m ChatModel) renderPane(width int) string {
 	innerWidth := width - paneStyle.GetHorizontalFrameSize()
 	if innerWidth < 1 {
 		innerWidth = 1
@@ -357,7 +357,7 @@ func (m Model) renderPane(width int) string {
 	return paneStyle.Width(innerWidth).Render(content)
 }
 
-func (m Model) renderComposer(width int) string {
+func (m ChatModel) renderComposer(width int) string {
 	composerStyle := m.currentComposerStyle()
 	innerWidth := width - composerStyle.GetHorizontalFrameSize()
 	if innerWidth < 1 {
@@ -373,7 +373,7 @@ func (m Model) renderComposer(width int) string {
 	return composerStyle.Width(innerWidth).Render(body)
 }
 
-func (m Model) renderFooter(width int) string {
+func (m ChatModel) renderFooter(width int) string {
 	innerWidth := width - footerStyle.GetHorizontalFrameSize()
 	if innerWidth < 1 {
 		innerWidth = 1
@@ -381,7 +381,7 @@ func (m Model) renderFooter(width int) string {
 	return footerStyle.Width(innerWidth).Render("Enter send | Ctrl+C or esc to exit")
 }
 
-func (m Model) currentComposerStyle() lipgloss.Style {
+func (m ChatModel) currentComposerStyle() lipgloss.Style {
 	if m.textinput.Focused() {
 		return composerFocusedStyle
 	}
@@ -389,7 +389,7 @@ func (m Model) currentComposerStyle() lipgloss.Style {
 	return composerBlurredStyle
 }
 
-func (m Model) renderEmptyState(width, height int) string {
+func (m ChatModel) renderEmptyState(width, height int) string {
 	if width < 1 {
 		width = 1
 	}
@@ -409,7 +409,7 @@ func (m Model) renderEmptyState(width, height int) string {
 	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
 }
 
-func (m Model) emptyStateTitle(width int) string {
+func (m ChatModel) emptyStateTitle(width int) string {
 	large := strings.TrimSpace(`
   ________          __  __________  ____
  / ____/ /_  ____ _/ /_/_  __/ / / /  _/
@@ -429,7 +429,7 @@ func (m Model) emptyStateTitle(width int) string {
 	return emptyStateTitleStyle.Width(width).Align(lipgloss.Center).Render(title)
 }
 
-func (m Model) transcriptPaneWidth() int {
+func (m ChatModel) transcriptPaneWidth() int {
 	paneInnerWidth := m.viewport.Width()
 	if paneInnerWidth < 1 {
 		paneInnerWidth = m.width - appStyle.GetHorizontalFrameSize() - paneStyle.GetHorizontalFrameSize()
@@ -441,7 +441,7 @@ func (m Model) transcriptPaneWidth() int {
 	return paneInnerWidth
 }
 
-func (m Model) conversationWidth(paneWidth int) int {
+func (m ChatModel) conversationWidth(paneWidth int) int {
 	conversationWidth := paneWidth
 	if conversationWidth > 84 {
 		conversationWidth = 84
@@ -460,7 +460,7 @@ func (m Model) conversationWidth(paneWidth int) int {
 	return conversationWidth
 }
 
-func (m Model) conversationLaneWidth(conversationWidth int) int {
+func (m ChatModel) conversationLaneWidth(conversationWidth int) int {
 	conversationLaneWidth := conversationWidth
 	if conversationLaneWidth < conversationWidth/2 {
 		conversationLaneWidth = conversationWidth / 2
@@ -472,7 +472,7 @@ func (m Model) conversationLaneWidth(conversationWidth int) int {
 	return conversationLaneWidth
 }
 
-func (m Model) assistantBubbleWidth(laneWidth int) int {
+func (m ChatModel) assistantBubbleWidth(laneWidth int) int {
 	bubbleWidth := laneWidth * 2 / 3
 	if bubbleWidth > 72 {
 		bubbleWidth = 72
@@ -491,7 +491,7 @@ func (m Model) assistantBubbleWidth(laneWidth int) int {
 	return bubbleWidth
 }
 
-func (m Model) userBubbleWidth(laneWidth int) int {
+func (m ChatModel) userBubbleWidth(laneWidth int) int {
 	bubbleWidth := laneWidth * 3 / 5
 	if bubbleWidth > 64 {
 		bubbleWidth = 64
@@ -524,7 +524,7 @@ func (m Model) userBubbleWidth(laneWidth int) int {
 // 	return composerHintStyle.Width(width).Render("Enter to send")
 // }
 
-func (m Model) renderLayoutSections(width int) layoutSections {
+func (m ChatModel) renderLayoutSections(width int) layoutSections {
 	return layoutSections{
 		header:   m.renderHeader(width),
 		status:   m.renderStatus(width),

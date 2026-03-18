@@ -150,17 +150,13 @@ func (m SetupModel) View() tea.View {
 		innerWidth = 1
 	}
 
-	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("230"))
-	hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-
 	var form string
 	if m.step == apiKeyLoadStepChoose {
 		prompt := labelStyle.Render("How would you like to load your OpenAI API key?")
 		opt0 := "Load from .env (API_KEY)"
 		opt1 := "Paste manually"
 
-		optStyle := lipgloss.NewStyle().Padding(0, 1)
-		selectedStyle := optStyle.Copy().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+		selectedStyle := optStyle.Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
 		line0 := optStyle.Render(opt0)
 		line1 := optStyle.Render(opt1)
 		if m.choiceIndex == 0 {
@@ -171,28 +167,32 @@ func (m SetupModel) View() tea.View {
 		}
 
 		hint := hintStyle.Render("Use ↑/↓ then Enter")
-		form = lipgloss.JoinVertical(lipgloss.Left, prompt, "", line0, line1, "", hint)
+		form = formStyle.Render(lipgloss.JoinVertical(lipgloss.Left, prompt, "", line0, line1, "", hint))
 	} else {
 		label := labelStyle.Render("OpenAI API token")
 		hint := hintStyle.Render("Your key is only used to create the chat session")
-		form = lipgloss.JoinVertical(
+		form = formStyle.Render(lipgloss.JoinVertical(
 			lipgloss.Left,
 			label,
 			m.apiTokenInput.View(),
 			hint,
-		)
+		))
 	}
 
 	errLine := ""
 	if m.err != nil {
-		errLine = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Render(m.err.Error())
+		errLine = errLineStyle.Render(m.err.Error())
 	}
 
 	if errLine != "" {
-		form = lipgloss.JoinVertical(lipgloss.Left, form, "", errLine)
+		form = formStyle.Render(lipgloss.JoinVertical(lipgloss.Left, form, "", errLine))
 	}
 
-	paneInnerHeight := appInnerHeight - lipgloss.Height(header) - lipgloss.Height(footer)
+	paneTotalHeight := appInnerHeight - lipgloss.Height(header) - lipgloss.Height(footer)
+	if paneTotalHeight < 1 {
+		paneTotalHeight = 1
+	}
+	paneInnerHeight := paneTotalHeight - paneStyle.GetVerticalFrameSize()
 	if paneInnerHeight < 1 {
 		paneInnerHeight = 1
 	}
